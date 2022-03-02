@@ -65,11 +65,6 @@ func New(config Config) (*Agent, error) {
 		Config:    config,
 		shutdowns: make(chan struct{}),
 	}
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, err
-	}
-	zap.ReplaceGlobals(logger)
 	setup := []func() error{
 		a.setupLogger,
 		a.setupMux,
@@ -144,8 +139,9 @@ func (a *Agent) setupServer() error {
 		a.Config.ACLPolicyFile,
 	)
 	serverConfig := &server.Config{
-		CommitLog:  a.log,
-		Authorizer: authorizer,
+		CommitLog:   a.log,
+		Authorizer:  authorizer,
+		GetServerer: a.log,
 	}
 	var opts []grpc.ServerOption
 	if a.Config.ServerTLSConfig != nil {

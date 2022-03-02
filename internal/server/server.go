@@ -2,12 +2,11 @@ package server
 
 import (
 	"context"
+	"time"
 
 	api "github.com/FanZhen2002/proglog/api/v1"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-
-	"time"
 
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -25,8 +24,9 @@ import (
 )
 
 type Config struct {
-	CommitLog  CommitLog
-	Authorizer Authorizer
+	CommitLog   CommitLog
+	Authorizer  Authorizer
+	GetServerer GetServerer
 }
 
 const (
@@ -166,6 +166,21 @@ func (s *grpcServer) ConsumeStream(
 	}
 }
 
+func (s *grpcServer) GetServers(
+	ctx context.Context, req *api.GetServersRequest,
+) (
+	*api.GetServersResponse, error) {
+	servers, err := s.GetServerer.GetServers()
+	if err != nil {
+		return nil, err
+	}
+	return &api.GetServersResponse{Servers: servers}, nil
+}
+
+type GetServerer interface {
+	GetServers() ([]*api.Server, error)
+}
+
 type CommitLog interface {
 	Append(*api.Record) (uint64, error)
 	Read(uint64) (*api.Record, error)
@@ -185,7 +200,10 @@ func authenticate(ctx context.Context) (context.Context, error) {
 	}
 
 	if peer.AuthInfo == nil {
-		return context.WithValue(ctx, subjectContextKey{}, ""), nil
+		return ctx, status.New(
+			codes.Unauthenticated,
+			"no transport security being used",
+		).Err()
 	}
 
 	tlsInfo := peer.AuthInfo.(credentials.TLSInfo)

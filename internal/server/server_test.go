@@ -6,21 +6,20 @@ import (
 
 	"io/ioutil"
 	"net"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
 	"flag"
-	"os"
-	"time"
 
 	"go.opencensus.io/examples/exporter"
-
-	"go.uber.org/zap"
 
 	api "github.com/FanZhen2002/proglog/api/v1"
 	"github.com/FanZhen2002/proglog/internal/auth"
